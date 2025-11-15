@@ -1,10 +1,28 @@
 "use client";
 
-import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import { Coins } from "lucide-react";
+import {
+  ConnectButton,
+  useCurrentAccount,
+  useSuiClientQuery,
+} from "@mysten/dapp-kit";
+import { Atom, Wallet } from "lucide-react";
 
 export function Header() {
   const account = useCurrentAccount();
+
+  const { data: balance } = useSuiClientQuery(
+    "getBalance",
+    {
+      owner: account?.address || "",
+    },
+    {
+      enabled: !!account?.address,
+    }
+  );
+
+  const formattedBalance = balance
+    ? (Number(balance.totalBalance) / 1_000_000_000).toFixed(2)
+    : "0.00";
 
   return (
     <header className="border-b">
@@ -12,16 +30,21 @@ export function Header() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-linear-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
-              <Coins className="w-6 h-6 text-white" />
+              <Atom className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">x402 on Sui</h1>
-              <p className="text-sm text-muted-foreground">
-                Atomic Payment + Access Protocol
-              </p>
+              <h1 className="text-2xl font-bold">atomic402</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {account && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                <Wallet className="w-4 h-4 text-blue-600" />
+                <span className="font-mono text-sm font-medium">
+                  {formattedBalance} SUI
+                </span>
+              </div>
+            )}
             <ConnectButton />
           </div>
         </div>
