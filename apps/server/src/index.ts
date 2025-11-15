@@ -2,11 +2,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { SuiClient } from "@mysten/sui/client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
+
 import { createX402Server } from "@repo/sdk";
 import type {
   ContentMetadata,
   SignedTransactionRequest,
-  ApiResponse,
 } from "@repo/shared/types";
 
 const app = new Hono();
@@ -27,9 +28,8 @@ const suiClient = new SuiClient({ url: RPC_URL });
 // In production, use secure key management
 let sponsorKeypair: Ed25519Keypair | undefined;
 if (process.env.SPONSOR_PRIVATE_KEY) {
-  sponsorKeypair = Ed25519Keypair.fromSecretKey(
-    Buffer.from(process.env.SPONSOR_PRIVATE_KEY, "hex")
-  );
+  const { secretKey } = decodeSuiPrivateKey(process.env.SPONSOR_PRIVATE_KEY);
+  sponsorKeypair = Ed25519Keypair.fromSecretKey(secretKey);
 }
 
 // Initialize x402 server SDK
@@ -47,14 +47,17 @@ interface StoredContent extends ContentMetadata {
 
 const contentStore = new Map<string, StoredContent>();
 
-// Sample content (will be populated with real on-chain content)
+// Sample content configuration
+// IMPORTANT: Replace these IDs with actual on-chain content object IDs after creating them
+// To create content on-chain, use the createContent function or sui CLI
 const sampleContents: Omit<StoredContent, "id">[] = [
   {
     title: "Understanding x402 on Sui",
     description: "Deep dive into how x402 protocol works on Sui blockchain",
     price: "100000000", // 0.1 SUI in MIST
     contentUrl: "ipfs://QmX123...",
-    creator: "0x1234567890abcdef1234567890abcdef12345678",
+    creator:
+      "0x729f0672594998979883d4001939359565b70866693935645810b4710b3066a5",
     actualContent: `# Understanding x402 on Sui
 
 This is premium content that explains how x402 works on Sui...
@@ -73,7 +76,8 @@ No verification delay. No polling. No trust issues.`,
     description: "Learn how to build complex PTBs on Sui",
     price: "200000000", // 0.2 SUI
     contentUrl: "ipfs://QmY456...",
-    creator: "0x1234567890abcdef1234567890abcdef12345678",
+    creator:
+      "0x729f0672594998979883d4001939359565b70866693935645810b4710b3066a5",
     actualContent: `# PTB Mastery
 
 Programmable Transaction Blocks are Sui's superpower...
@@ -85,7 +89,8 @@ Programmable Transaction Blocks are Sui's superpower...
     description: "Complete guide to DeFi development on Sui",
     price: "500000000", // 0.5 SUI
     contentUrl: "ipfs://QmZ789...",
-    creator: "0x1234567890abcdef1234567890abcdef12345678",
+    creator:
+      "0x729f0672594998979883d4001939359565b70866693935645810b4710b3066a5",
     actualContent: `# DeFi on Sui
 
 Learn how to build the next generation of DeFi protocols...
@@ -95,8 +100,14 @@ Learn how to build the next generation of DeFi protocols...
 ];
 
 // Initialize sample content in store
+const contentIds = [
+  "0x640877b52eb909446d43d019f9a771b4dbf9f98727f0365d1cef871fcff6f45a",
+  "0x9bb8765c7e536adc4806e347dee627748ba28571ee9d2f39222fe8dba38eaa70",
+  "0x9bb8765c7e536adc4806e347dee627748ba28571ee9d2f39222fe8dba38eaa70",
+];
 sampleContents.forEach((content, index) => {
-  const id = `content_${index + 1}`;
+  // Use real on-chain object ID if provided, otherwise use placeholder
+  const id = contentIds[index]!;
   contentStore.set(id, { ...content, id });
 });
 
@@ -176,6 +187,18 @@ app.get("/content/:id", async (c) => {
       return c.json({ success: false, error: "User address required" }, 400);
     }
 
+    // Check if content has been created on-chain
+    if (content.id.startsWith("CONTENT_NOT_CREATED_")) {
+      return c.json(
+        {
+          success: false,
+          error:
+            "Content not yet created on-chain. Please create content objects first using createContent function or see setup instructions in README.",
+        },
+        503
+      );
+    }
+
     const x402Response = await x402Server.generateX402Response(
       {
         id: content.id,
@@ -203,8 +226,6 @@ app.get("/content/:id", async (c) => {
  * Accept signed transaction, sponsor, and execute
  */
 app.post("/content/:id/execute", async (c) => {
-  const contentId = c.req.param("id");
-
   try {
     const body = await c.req.json<SignedTransactionRequest>();
 
@@ -227,12 +248,15 @@ app.post("/content/:id/execute", async (c) => {
         explorer: `https://suiscan.xyz/${NETWORK}/tx/${result.digest}`,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Transaction execution failed:", error);
     return c.json(
       {
         success: false,
-        error: error.message || "Transaction execution failed",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Transaction execution failed",
       },
       500
     );
@@ -264,20 +288,32 @@ app.get("/receipts/:address", async (c) => {
         (obj) => obj.data?.content && obj.data.content.dataType === "moveObject"
       )
       .map((obj) => {
-        const fields = obj.data!.content!.fields as any;
+        if (obj.data?.content?.dataType !== "moveObject") {
+          throw new Error("Invalid object type");
+        }
+        const fields = obj.data.content.fields as Record<string, unknown>;
         return {
           id: obj.data!.objectId,
-          contentId: fields.content_id,
-          contentTitle: Buffer.from(fields.content_title).toString("utf8"),
-          pricePaid: fields.price_paid,
-          timestamp: fields.timestamp,
+          contentId: String(fields.content_id),
+          contentTitle: Buffer.from(fields.content_title as number[]).toString(
+            "utf8"
+          ),
+          pricePaid: String(fields.price_paid),
+          timestamp: String(fields.timestamp),
         };
       });
 
     return c.json({ success: true, data: receipts });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to fetch receipts:", error);
-    return c.json({ success: false, error: error.message }, 500);
+    return c.json(
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to fetch receipts",
+      },
+      500
+    );
   }
 });
 
