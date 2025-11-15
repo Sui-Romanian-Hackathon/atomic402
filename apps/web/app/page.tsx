@@ -152,29 +152,6 @@ export default function Home() {
             Experience the future of payments on Sui. Purchase content with
             atomic payment + access grant in a single transaction.
           </p>
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg max-w-3xl mx-auto">
-            <h3 className="font-semibold text-blue-900 mb-2">How it works:</h3>
-            <div className="text-sm text-blue-800 text-left grid md:grid-cols-3 gap-4">
-              <div>
-                <span className="font-bold">1. Click Purchase</span>
-                <p className="text-xs mt-1">
-                  Server builds a PTB with payment + access grant
-                </p>
-              </div>
-              <div>
-                <span className="font-bold">2. Sign Transaction</span>
-                <p className="text-xs mt-1">
-                  Your wallet signs the pre-built transaction
-                </p>
-              </div>
-              <div>
-                <span className="font-bold">3. Instant Access</span>
-                <p className="text-xs mt-1">
-                  Payment and access happen atomically!
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Transaction Status */}
@@ -233,41 +210,6 @@ export default function Home() {
             ))}
           </div>
         )}
-
-        {/* Technical Details */}
-        <div className="mt-16 p-6 bg-white rounded-lg shadow-sm border">
-          <h3 className="text-xl font-bold mb-4">
-            Why x402 on Sui is Different
-          </h3>
-          <div className="grid md:grid-cols-2 gap-6 text-sm">
-            <div>
-              <h4 className="font-semibold text-red-600 mb-2">
-                Traditional x402:
-              </h4>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Pay → Submit TxID</li>
-                <li>• Server polls blockchain</li>
-                <li>• Wait for confirmation</li>
-                <li>• Server verifies payment</li>
-                <li>• Finally grant access</li>
-                <li>• Potential re-org issues</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-green-600 mb-2">
-                x402 on Sui:
-              </h4>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Server builds PTB (payment + access)</li>
-                <li>• Client signs once</li>
-                <li>• Server sponsors (optional)</li>
-                <li>• Atomic execution on Sui</li>
-                <li>• Instant access, no polling</li>
-                <li>• Zero trust issues</li>
-              </ul>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   );
