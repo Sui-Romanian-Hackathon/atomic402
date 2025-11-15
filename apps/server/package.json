@@ -11,8 +11,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@atomic402/sui-sdk": "^0.0.1",
     "@mysten/sui": "^1.45.0",
-    "@repo/sdk": "*",
     "@repo/shared": "*",
     "hono": "^4.6.11"
   },

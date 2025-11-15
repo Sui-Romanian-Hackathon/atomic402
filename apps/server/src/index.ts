@@ -4,11 +4,11 @@ import { SuiClient } from "@mysten/sui/client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 
-import { createX402Server } from "@repo/sdk";
+import { createX402Server } from "@atomic402/sui-sdk";
 import type {
   ContentMetadata,
   SignedTransactionRequest,
-} from "@repo/shared/types";
+} from "@atomic402/sui-sdk";
 
 const app = new Hono();
 
