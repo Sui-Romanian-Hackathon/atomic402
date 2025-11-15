@@ -9,7 +9,7 @@ import type {
   X402Response,
   SignedTransactionRequest,
   AccessReceiptData,
-} from "@repo/shared/types";
+} from "./types.js";
 
 export interface ClientConfig {
   suiClient: SuiClient;
@@ -204,7 +204,10 @@ export class X402Client {
             obj.data?.content && obj.data.content.dataType === "moveObject"
         )
         .map((obj) => {
-          const fields = obj.data!.content!.fields as Record<string, unknown>;
+          if (obj.data?.content?.dataType !== "moveObject") {
+            throw new Error("Invalid object type");
+          }
+          const fields = obj.data.content.fields as Record<string, unknown>;
           return {
             id: obj.data!.objectId,
             contentId: String(fields.content_id),

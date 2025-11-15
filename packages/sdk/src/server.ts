@@ -10,7 +10,7 @@ import type {
   X402Response,
   ContentMetadata,
   TransactionResult,
-} from "@repo/shared/types";
+} from "./types.js";
 
 export interface ServerConfig {
   suiClient: SuiClient;

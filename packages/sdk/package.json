@@ -1,15 +1,61 @@
 {
-  "name": "@repo/sdk",
-  "version": "0.0.0",
+  "name": "@atomic402/sui-sdk",
+  "version": "0.0.2",
+  "description": "TypeScript SDK for x402 (Payment Required) protocol on Sui blockchain with atomic payment + access grant",
   "type": "module",
-  "private": true,
+  "private": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit"
+  },
+  "keywords": [
+    "sui",
+    "x402",
+    "payment",
+    "blockchain",
+    "web3",
+    "ptb",
+    "programmable-transaction",
+    "atomic-payment",
+    "sui-sdk",
+    "payment-required"
+  ],
+  "author": "fac3m4n",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fac3m4n/atomic402.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/fac3m4n/atomic402/issues"
+  },
+  "homepage": "https://github.com/fac3m4n/atomic402#readme",
+  "peerDependencies": {
+    "@mysten/sui": "^1.45.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
@@ -19,7 +65,6 @@
     "typescript": "5.9.2"
   },
   "dependencies": {
-    "@mysten/sui": "^1.45.0",
-    "@repo/shared": "*"
+    "@mysten/sui": "^1.45.0"
   }
 }

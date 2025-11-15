@@ -1,4 +1,4 @@
-# @repo/x402-sui-sdk
+# @atomic402/sui-sdk
 
 TypeScript SDK for implementing x402 (Payment Required) protocol on Sui blockchain.
 
@@ -13,9 +13,9 @@ TypeScript SDK for implementing x402 (Payment Required) protocol on Sui blockcha
 ## Installation
 
 ```bash
-npm install @repo/x402-sui-sdk @mysten/sui
+npm install @atomic402/sui-sdk @mysten/sui
 # or
-bun add @repo/x402-sui-sdk @mysten/sui
+bun add @atomic402/sui-sdk @mysten/sui
 ```
 
 ## Quick Start
@@ -23,27 +23,27 @@ bun add @repo/x402-sui-sdk @mysten/sui
 ### Server-Side
 
 ```typescript
-import { createX402Server } from '@repo/x402-sui-sdk';
-import { SuiClient } from '@mysten/sui/client';
-import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { createX402Server } from "@atomic402/sui-sdk";
+import { SuiClient } from "@mysten/sui/client";
+import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 
 // Initialize
-const client = new SuiClient({ url: 'https://fullnode.testnet.sui.io:443' });
+const client = new SuiClient({ url: "https://fullnode.testnet.sui.io:443" });
 const sponsorKeypair = Ed25519Keypair.fromSecretKey(/* ... */);
 
 const x402Server = createX402Server({
   suiClient: client,
-  packageId: '0xYOUR_PACKAGE_ID',
+  packageId: "0xYOUR_PACKAGE_ID",
   sponsorKeypair, // Optional: for gasless transactions
 });
 
 // Generate x402 response
 const response = await x402Server.generateX402Response(
   {
-    id: 'content_1',
-    title: 'Premium Article',
-    price: '100000000', // 0.1 SUI in MIST
-    creator: '0xCREATOR_ADDRESS',
+    id: "content_1",
+    title: "Premium Article",
+    price: "100000000", // 0.1 SUI in MIST
+    creator: "0xCREATOR_ADDRESS",
     // ... other fields
   },
   buyerAddress
@@ -68,37 +68,34 @@ const result = await x402Server.sponsorAndExecute(
   clientPublicKey
 );
 
-console.log('Transaction:', result.digest);
+console.log("Transaction:", result.digest);
 ```
 
 ### Client-Side
 
 ```typescript
-import { createX402Client } from '@repo/x402-sui-sdk';
-import { SuiClient } from '@mysten/sui/client';
+import { createX402Client } from "@atomic402/sui-sdk";
+import { SuiClient } from "@mysten/sui/client";
 
 // Initialize
-const client = new SuiClient({ url: 'https://fullnode.testnet.sui.io:443' });
+const client = new SuiClient({ url: "https://fullnode.testnet.sui.io:443" });
 
 const x402Client = createX402Client({
   suiClient: client,
-  packageId: '0xYOUR_PACKAGE_ID',
+  packageId: "0xYOUR_PACKAGE_ID",
 });
 
 // Handle x402 flow
 const digest = await x402Client.handleX402Flow(
-  'https://api.example.com',
-  'content_1',
+  "https://api.example.com",
+  "content_1",
   keypair
 );
 
-console.log('Purchase complete:', digest);
+console.log("Purchase complete:", digest);
 
 // Check access
-const hasAccess = await x402Client.checkAccess(
-  userAddress,
-  'content_1'
-);
+const hasAccess = await x402Client.checkAccess(userAddress, "content_1");
 
 // Get all receipts
 const receipts = await x402Client.getAccessReceipts(userAddress);
@@ -148,6 +145,7 @@ function PurchaseButton({ contentId }) {
 Creates a new x402 server instance.
 
 **Parameters:**
+
 ```typescript
 {
   suiClient: SuiClient;        // Sui client instance
@@ -194,6 +192,7 @@ Checks if an address owns access to content.
 Creates a new x402 client instance.
 
 **Parameters:**
+
 ```typescript
 {
   suiClient: SuiClient;
@@ -263,7 +262,7 @@ Waits for transaction confirmation.
     recipient: string;
     transactionBytes: string;
     description: string;
-  };
+  }
 }
 ```
 
@@ -299,16 +298,18 @@ Waits for transaction confirmation.
 
 ```typescript
 const tx = await x402Server.buildPurchaseTransaction({
-  contentObjectId: '0xCONTENT_ID',
-  price: '100000000',
-  creator: '0xCREATOR',
-  buyerAddress: '0xBUYER',
+  contentObjectId: "0xCONTENT_ID",
+  price: "100000000",
+  creator: "0xCREATOR",
+  buyerAddress: "0xBUYER",
 });
 
 // Add custom logic
 tx.moveCall({
   target: `${packageId}::custom::extra_logic`,
-  arguments: [/* ... */],
+  arguments: [
+    /* ... */
+  ],
 });
 
 // Execute
@@ -320,13 +321,13 @@ const txBytes = await tx.build({ client });
 ```typescript
 try {
   const result = await x402Server.sponsorAndExecute(txBytes, sig, pubKey);
-  if (result.status === 'failure') {
-    console.error('Transaction failed:', result.effects);
+  if (result.status === "failure") {
+    console.error("Transaction failed:", result.effects);
   }
 } catch (error) {
-  if (error.message.includes('Insufficient gas')) {
+  if (error.message.includes("Insufficient gas")) {
     // Handle gas error
-  } else if (error.message.includes('Insufficient payment')) {
+  } else if (error.message.includes("Insufficient payment")) {
     // Handle payment error
   }
 }
@@ -341,7 +342,7 @@ const sponsorKeypair = Ed25519Keypair.fromSecretKey(sponsorPrivateKey);
 
 const x402Server = createX402Server({
   suiClient: client,
-  packageId: '0xPACKAGE_ID',
+  packageId: "0xPACKAGE_ID",
   sponsorKeypair, // Server pays gas!
 });
 ```
@@ -369,16 +370,17 @@ Users sign the transaction, but the server pays the gas fees.
 ## Examples
 
 See the `apps/` directory for complete examples:
+
 - `apps/server`: Express/Hono API server
 - `apps/web`: Next.js frontend with wallet integration
 
 ## Testing
 
 ```typescript
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect } from "bun:test";
 
-describe('x402 SDK', () => {
-  test('generates valid x402 response', async () => {
+describe("x402 SDK", () => {
+  test("generates valid x402 response", async () => {
     const response = await x402Server.generateX402Response(content, buyer);
     expect(response.statusCode).toBe(402);
     expect(response.paymentRequired.transactionBytes).toBeTruthy();
@@ -389,6 +391,7 @@ describe('x402 SDK', () => {
 ## Contributing
 
 Contributions welcome! Please:
+
 1. Fork the repository
 2. Create a feature branch
 3. Add tests for new functionality
@@ -407,6 +410,7 @@ MIT
 ## Changelog
 
 ### v0.1.0 (Initial Release)
+
 - Server SDK with PTB construction
 - Client SDK with transaction signing
 - x402 response generation
