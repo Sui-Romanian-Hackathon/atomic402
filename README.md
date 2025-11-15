@@ -24,6 +24,40 @@ This project showcases how the HTTP 402 "Payment Required" protocol can be revol
 
 **Benefits**: No polling, no verification delay, zero trust issues, atomic execution
 
+## 📦 Published SDK
+
+The x402 SDK is now published on npm and available for anyone to use:
+
+```bash
+npm install @atomic402/sui-sdk
+```
+
+**Package:** [@atomic402/sui-sdk](https://www.npmjs.com/package/@atomic402/sui-sdk)
+
+### Quick SDK Usage
+
+```typescript
+// Server-side
+import { createX402Server } from "@atomic402/sui-sdk";
+
+const server = createX402Server({
+  suiClient,
+  serverKeypair,
+  packageId: "YOUR_PACKAGE_ID",
+  registryId: "YOUR_REGISTRY_ID",
+});
+
+// Client-side
+import { createX402Client } from "@atomic402/sui-sdk";
+
+const client = createX402Client({
+  suiClient,
+  network: "testnet",
+});
+```
+
+See the [SDK Documentation](./packages/sdk/README.md) for full details.
+
 ## 📦 Project Structure
 
 ```
