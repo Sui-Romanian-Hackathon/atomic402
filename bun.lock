@@ -14,7 +14,7 @@
       "name": "server",
       "version": "0.1.0",
       "dependencies": {
-        "@atomic402/sui-sdk": "^0.0.1",
+        "@atomic402/sui-sdk": "*",
         "@mysten/sui": "^1.45.0",
         "@repo/shared": "*",
         "hono": "^4.6.11",
@@ -1033,8 +1033,6 @@
     "fast-glob/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, "sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow=="],
 
     "next/postcss": ["postcss@8.4.31", "", { "dependencies": { "nanoid": "^3.3.6", "picocolors": "^1.0.0", "source-map-js": "^1.0.2" } }, "sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ=="],
-
-    "server/@atomic402/sui-sdk": ["@atomic402/sui-sdk@0.0.1", "", { "dependencies": { "@mysten/sui": "^1.45.0" } }, "sha512-fcWUfKd3GSOuFSx7rHHDva/CLNUCxzS2Ywf3ENIbuyja9+o7orev90RQzzl0iYP5LfGlkypVui3DOAJUZ6d48w=="],
 
     "sharp/semver": ["semver@7.7.3", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q=="],
 

@@ -132,6 +132,57 @@ app.get("/health", (c) => {
 });
 
 /**
+ * POST /content/register
+ * Register content metadata after user creates it on-chain
+ */
+app.post("/content/register", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { contentId, creator, title, description, contentData, price } = body;
+
+    // Validate required fields
+    if (
+      !contentId ||
+      !creator ||
+      !title ||
+      !description ||
+      !contentData ||
+      !price
+    ) {
+      return c.json({ success: false, error: "Missing required fields" }, 400);
+    }
+
+    // Store content in our database/memory
+    const newContent: StoredContent = {
+      id: contentId,
+      title,
+      description,
+      price,
+      creator,
+      contentUrl: "",
+      actualContent: contentData,
+    };
+
+    contentStore.set(contentId, newContent);
+
+    return c.json({
+      success: true,
+      data: { contentId },
+    });
+  } catch (error) {
+    console.error("Register content error:", error);
+    return c.json(
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to register content",
+      },
+      500
+    );
+  }
+});
+
+/**
  * GET /content
  * List all available content
  */
