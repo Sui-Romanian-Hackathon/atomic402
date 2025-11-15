@@ -1,10 +1,273 @@
-import { Button } from "~/components/ui/button";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Header } from "./components/Header";
+import { ContentCard } from "./components/ContentCard";
+import { useCurrentAccount, useSignTransaction } from "@mysten/dapp-kit";
+import type { ContentMetadata, X402Response } from "@repo/shared/types";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Card } from "./components/ui/card";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
 export default function Home() {
+  const [contents, setContents] = useState<ContentMetadata[]>([]);
+  const [ownedContent, setOwnedContent] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [txStatus, setTxStatus] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
+
+  const account = useCurrentAccount();
+  const { mutateAsync: signTransaction } = useSignTransaction();
+
+  // Fetch available content
+  useEffect(() => {
+    fetchContents();
+  }, []);
+
+  // Check owned content when wallet connects
+  useEffect(() => {
+    if (account?.address) {
+      checkOwnedContent();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.address]);
+
+  const fetchContents = async () => {
+    try {
+      const response = await fetch(`${API_URL}/content`);
+      const data = await response.json();
+      setContents(data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch contents:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkOwnedContent = async () => {
+    if (!account?.address) return;
+
+    try {
+      const response = await fetch(`${API_URL}/receipts/${account.address}`);
+      const data = await response.json();
+
+      if (data.success) {
+        const owned = new Set<string>(
+          data.data.map((r: { contentId: string }) => r.contentId)
+        );
+        setOwnedContent(owned);
+      }
+    } catch (error) {
+      console.error("Failed to check owned content:", error);
+    }
+  };
+
+  const handlePurchase = async (contentId: string) => {
+    if (!account?.address) {
+      alert("Please connect your wallet first");
+      return;
+    }
+
+    try {
+      setTxStatus({ message: "Requesting payment details...", type: "info" });
+
+      // Step 1: Request content (will get 402 response)
+      const response = await fetch(
+        `${API_URL}/content/${contentId}?address=${account.address}`
+      );
+
+      if (response.status !== 402) {
+        throw new Error("Expected 402 Payment Required response");
+      }
+
+      const x402Response: X402Response = await response.json();
+
+      setTxStatus({ message: "Waiting for signature...", type: "info" });
+
+      // Step 2: Sign the transaction
+      // Pass the base64 string directly - the wallet will handle decoding
+      const { signature } = await signTransaction({
+        transaction: x402Response.paymentRequired.transactionBytes,
+      });
+
+      setTxStatus({ message: "Submitting transaction...", type: "info" });
+
+      // Step 3: Submit signed transaction to server
+      const executeResponse = await fetch(
+        `${API_URL}/content/${contentId}/execute`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            transactionBytes: x402Response.paymentRequired.transactionBytes,
+            signature: signature,
+            publicKey: account.publicKey,
+          }),
+        }
+      );
+
+      const result = await executeResponse.json();
+
+      if (result.success) {
+        setTxStatus({
+          message: `Success! Transaction: ${result.data.digest.slice(0, 8)}...`,
+          type: "success",
+        });
+
+        // Refresh owned content
+        setTimeout(() => {
+          checkOwnedContent();
+          setTxStatus(null);
+        }, 3000);
+      } else {
+        throw new Error(result.error || "Transaction failed");
+      }
+    } catch (error) {
+      console.error("Purchase error:", error);
+      setTxStatus({
+        message: `Error: ${error instanceof Error ? error.message : "Purchase failed"}`,
+        type: "error",
+      });
+
+      setTimeout(() => setTxStatus(null), 5000);
+    }
+  };
+
   return (
-    <div>
-      <main>
-        <h1 className="text-3xl font-bold underline">Hello World</h1>
-        <Button>Click me</Button>
+    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100">
+      <Header />
+
+      <main className="container mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Premium Content Marketplace
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Experience the future of payments on Sui. Purchase content with
+            atomic payment + access grant in a single transaction.
+          </p>
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg max-w-3xl mx-auto">
+            <h3 className="font-semibold text-blue-900 mb-2">How it works:</h3>
+            <div className="text-sm text-blue-800 text-left grid md:grid-cols-3 gap-4">
+              <div>
+                <span className="font-bold">1. Click Purchase</span>
+                <p className="text-xs mt-1">
+                  Server builds a PTB with payment + access grant
+                </p>
+              </div>
+              <div>
+                <span className="font-bold">2. Sign Transaction</span>
+                <p className="text-xs mt-1">
+                  Your wallet signs the pre-built transaction
+                </p>
+              </div>
+              <div>
+                <span className="font-bold">3. Instant Access</span>
+                <p className="text-xs mt-1">
+                  Payment and access happen atomically!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Transaction Status */}
+        {txStatus && (
+          <Card
+            className={`mb-6 p-4 ${
+              txStatus.type === "success"
+                ? "bg-green-50 border-green-200"
+                : txStatus.type === "error"
+                  ? "bg-red-50 border-red-200"
+                  : "bg-blue-50 border-blue-200"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {txStatus.type === "success" && (
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              )}
+              {txStatus.type === "error" && (
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              )}
+              {txStatus.type === "info" && (
+                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+              )}
+              <span
+                className={`font-medium ${
+                  txStatus.type === "success"
+                    ? "text-green-900"
+                    : txStatus.type === "error"
+                      ? "text-red-900"
+                      : "text-blue-900"
+                }`}
+              >
+                {txStatus.message}
+              </span>
+            </div>
+          </Card>
+        )}
+
+        {/* Content Grid */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="ml-3 text-muted-foreground">
+              Loading content...
+            </span>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {contents.map((content) => (
+              <ContentCard
+                key={content.id}
+                content={content}
+                hasAccess={ownedContent.has(content.id)}
+                onPurchase={handlePurchase}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Technical Details */}
+        <div className="mt-16 p-6 bg-white rounded-lg shadow-sm border">
+          <h3 className="text-xl font-bold mb-4">
+            Why x402 on Sui is Different
+          </h3>
+          <div className="grid md:grid-cols-2 gap-6 text-sm">
+            <div>
+              <h4 className="font-semibold text-red-600 mb-2">
+                Traditional x402:
+              </h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• Pay → Submit TxID</li>
+                <li>• Server polls blockchain</li>
+                <li>• Wait for confirmation</li>
+                <li>• Server verifies payment</li>
+                <li>• Finally grant access</li>
+                <li>• Potential re-org issues</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-green-600 mb-2">
+                x402 on Sui:
+              </h4>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>• Server builds PTB (payment + access)</li>
+                <li>• Client signs once</li>
+                <li>• Server sponsors (optional)</li>
+                <li>• Atomic execution on Sui</li>
+                <li>• Instant access, no polling</li>
+                <li>• Zero trust issues</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
