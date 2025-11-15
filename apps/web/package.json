@@ -11,8 +11,13 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@mysten/dapp-kit": "^0.14.36",
+    "@mysten/sui": "^1.45.0",
     "@radix-ui/react-slot": "^1.2.4",
+    "@repo/sdk": "*",
+    "@repo/shared": "*",
     "@tailwindcss/postcss": "^4.1.17",
+    "@tanstack/react-query": "^5.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.553.0",
